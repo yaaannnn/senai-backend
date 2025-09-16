@@ -39,12 +39,19 @@ app.post("/usuarios", async (req, res) => {
 
     db.run(`INSERT INTO usuarios (nome, email, senha) VALUES(?, ?, ?)`,
         [nome, email, senhahash],
-        res.json({
-            id: this.lastID,
-            nome,
-            email,
-            senha
-        })
+        function(err){
+
+            if(err){
+                return res.status.status(500).json({message: "Erro ao cadastrar usuário"})  
+            }
+            res.json({
+                id: this.lastID,
+                nome,
+                email,
+                senha
+            })
+
+        }
 
     )
 
@@ -100,6 +107,8 @@ app.delete("/usuarios", (req, res) => {
         if (err) {
             return res.status(500).json({ message: "Erro ao deletar usuários" });
         }
+        // Resetar o contador de IDs
+        db.run(`DELETE FROM sqlite_sequence WHERE name='usuarios'`);
 
         res.json({
             message: "Todos os usuários foram deletados",
@@ -107,4 +116,3 @@ app.delete("/usuarios", (req, res) => {
         });
     });
 });
-
