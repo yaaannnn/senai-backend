@@ -17,18 +17,18 @@ const db = new sqlite3.Database("./database.db")
 
 // Criar tabela usuarios
 
-db.run(`CREATE TABLE IF NOT EXIST usuarios()
+db.run(`CREATE TABLE IF NOT EXISTS usuarios(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    nome TEXT
-    email TEXT
+    nome TEXT,
+    email TEXT,
     senha TEXT
 
 )`)
 
 // Cadastrar usuario
 
-app.post("/usuario", async (rec, res) => {
-    let nome = req.body.name
+app.post("/usuarios", async (req, res) => {
+    let nome = req.body.nome
     let email = req.body.email
     let senha = req.body.senha
 
@@ -37,16 +37,74 @@ app.post("/usuario", async (rec, res) => {
     
     // Inserir no banco de dados
 
-    db.run(`INSERT INTO usuarios{nome, email, senha} VALUES(?, ?, ?)`,
+    db.run(`INSERT INTO usuarios (nome, email, senha) VALUES(?, ?, ?)`,
         [nome, email, senhahash],
-        rec.json({
+        res.json({
             id: this.lastID,
             nome,
-            email
+            email,
+            senha
         })
 
     )
 
 
 })
+
+// Listar todos os usuarios
+
+app.get("/usuarios", (req, res) => {
+    db.all(`SELECT id, nome, email FROM usuarios`, [], (err, rows) =>{
+        res.json(rows)
+    });
+});
+
+// Iniciar o servidor
+
+app.listen(PORT, () => console.log(`Servidor rodando em http://localhost:${PORT}`));
+
+// Selecionar um usuário
+
+app.get("/usuarios/:id", (req,res) => {
+    let idUsuario = req.params.id;
+
+    db.get(`SELECT id, nome, email FROM usuarios 
+    WHERE id = ?`,
+    [idUsuario], (err, row) => {
+        if (row){
+            res.json(row)
+        } else{
+            res.status(404).json({message : "Usuário não encontrado"})
+        }
+    })
+
+})
+
+app.delete("/usuarios/:id", (req, res) => {
+    let idUsuario = req.params.id
+
+    db.run(`DELETE FROM usuarios WHERE id = ?`,
+    [idUsuario], function(){
+        // Verifica se houve alteração no DB
+        if(this.changes === 0){
+            res.status(404).json({message : "Usuário não encontrado"})
+        }
+
+        res.json({message : "Usuário deletado"})
+
+    })
+})
+
+app.delete("/usuarios", (req, res) => {
+    db.run(`DELETE FROM usuarios`, function(err) {
+        if (err) {
+            return res.status(500).json({ message: "Erro ao deletar usuários" });
+        }
+
+        res.json({
+            message: "Todos os usuários foram deletados",
+            deletados: this.changes // número de linhas afetadas
+        });
+    });
+});
 
